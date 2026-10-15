@@ -15,7 +15,7 @@ public class LoginValidator {
             if (!Character.isLetterOrDigit(c)) return false;
         }
 
-        if (password.length() <= 8) return false;
+        if (password.length() < 8) return false;
 
         boolean hasDigit = false;
         for (char c : password.toCharArray()) {
