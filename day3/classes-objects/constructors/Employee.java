@@ -1,23 +1,26 @@
+package constructors;
+
 public class Employee {
 
-    // instance variables: every Employee object has its own copy
     String employeeName;
     String employeeDepartment;
     int salary;
 
-    // default constructor (no parameters)
-    public Employee() {
-        employeeName = "Mike";
-        employeeDepartment = "QA";
-        salary = 100;
-    }
-
-    // parameterized constructor: the values come from outside
+    // parameterized constructor with three parameters
     public Employee(String n, String d, int s) {
         employeeName = n;
         employeeDepartment = d;
         salary = s;
     }
+
+    // another constructor with two parameters (the parameters must be different)
+    public Employee(String n, String d) {
+        employeeName = n;
+        employeeDepartment = d;
+    }
+
+    // A second constructor with the same parameters (String, String) would give
+    // an error, because it would be a duplicate.
 
     public void printEmployee() {
         System.out.println(employeeName);

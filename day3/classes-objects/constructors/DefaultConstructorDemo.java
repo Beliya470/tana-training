@@ -1,3 +1,5 @@
+package constructors;
+
 // Book has no constructor, so the compiler adds an empty default one.
 // The variables then get default values: null for String, 0 for numbers.
 class Book {
