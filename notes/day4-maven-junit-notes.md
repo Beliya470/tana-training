@@ -39,7 +39,7 @@ From the three Udemy Maven lessons, Maven in 5 Minutes and the JUnit 5 User Guid
   4. Run the `test` goal. Maven compiles the code, then Surefire runs the XML file.
 - The lesson result: 3 tests run, 0 failures, 0 errors, 0 skipped, BUILD SUCCESS. Mine gave the same.
 - The Orange test in the lesson opens a browser with Selenium. I do not have Selenium code yet (Day 5), so my three test cases only print their step.
-- I did not have the compiler plugin lesson (it was the video before). I wrote the compiler plugin myself with the Java release number (17).
+- The compiler plugin was taught in the video before these three, so I wrote it myself with the Java release number (17).
 
 ## Maven in 5 Minutes
 - Check Maven with `mvn --version`.
@@ -49,7 +49,7 @@ From the three Udemy Maven lessons, Maven in 5 Minutes and the JUnit 5 User Guid
 
 ## JUnit 5 (Writing Tests)
 - JUnit 5 = JUnit Platform + JUnit Jupiter + JUnit Vintage. Jupiter is the part I use to write tests. Vintage runs old JUnit 3 and 4 tests.
-- The guide I was given is for version 6.1.3. The task says JUnit 5, so I used 5.13.4. The annotations and assertions I use are the same.
+- The current guide page is for version 6.1.3, but I am working with JUnit 5, so I used the 5.13.4 guide and dependency. The annotations and assertions I use are the same.
 - Dependency: `org.junit.jupiter:junit-jupiter` with scope `test`. It brings the API, the engine and `junit-jupiter-params` (needed for `@ParameterizedTest`). Surefire must be a new version (2.22 or newer) to run JUnit 5. I used 3.2.5.
 - `@Test`: marks a method as a test method.
 - `@BeforeEach`: runs before each test method, so every test starts fresh.
