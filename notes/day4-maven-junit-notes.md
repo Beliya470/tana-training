@@ -33,9 +33,9 @@ From the three Udemy Maven lessons, Maven in 5 Minutes and the JUnit 5 User Guid
 ## Maven test phase and Surefire plugin
 - The test phase runs the test cases. The command is `mvn test`.
 - In the lesson the steps are:
-  1. Make a TestNG XML file for the tests (`test.xml`, listing the test classes).
+  1. Make a TestNG XML file for the tests (`testng.xml`, the name Eclipse gives when I convert the class to TestNG; it lists the test classes).
   2. Write the Surefire plugin in the pom, inside `<plugins>` (the lesson used version 3.1.2).
-  3. Put the XML file name in the plugin: `<suiteXmlFiles><suiteXmlFile>test.xml</suiteXmlFile></suiteXmlFiles>`.
+  3. Put the XML file name in the plugin: `<suiteXmlFiles><suiteXmlFile>testng.xml</suiteXmlFile></suiteXmlFiles>`.
   4. Run the `test` goal. Maven compiles the code, then Surefire runs the XML file.
 - The lesson result: 3 tests run, 0 failures, 0 errors, 0 skipped, BUILD SUCCESS. Mine gave the same.
 - The Orange test in the lesson opens a browser with Selenium. I do not have Selenium code yet (Day 5), so my three test cases only print their step.
