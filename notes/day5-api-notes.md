@@ -68,6 +68,8 @@ Base URL: `https://api.practicesoftwaretesting.com`. I used the Swagger docs (`/
 | `POST /users/login` with an email that does not exist | 401 | `{"error":"Unauthorized"}` |
 | `GET /products/search?q=pliers` | 200 | The same page object as `/products`, with the 4 pliers products. `q` is a query parameter, and `{id}` above is a path parameter. |
 
+The API reseeds its data: the IDs of the brands and products changed between my afternoon and evening requests on the same day (the names, prices and structure stayed the same). So an ID can never be written in a test.
+
 Also found: a login with a missing password, an empty body or bad JSON gives 401 with `{"error":"Invalid login request"}`, which is a different message from an unknown email. A search with no match gives 200 and an empty `data` list. `GET /products?page=999` gives 200 and an empty list.
 
 **Compared with the Tufin deck:** Tufin uses `start` and `count` for pages and a `total` field. Toolshop uses `page` and gives `total` too. Both put the resource id in the path and filters in the query. Both use 200 for a good GET and 4XX for a client mistake.
