@@ -1,0 +1,155 @@
+{
+  "info": {
+    "name": "Toolshop API (Day 5)",
+    "description": "The requests from the Day 5 Postman task, sent to the clean Toolshop API. Send them in order: GET /products saves a real product id in the variable productId, and the next request uses it.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://api.practicesoftwaretesting.com" },
+    { "key": "productId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. GET /brands",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('The body is a plain list, not an object with a data list', function () {",
+              "    pm.expect(pm.response.json()).to.be.an('array');",
+              "});",
+              "pm.test('Every brand has a name', function () {",
+              "    pm.response.json().forEach(function (brand) {",
+              "        pm.expect(brand.name).to.be.a('string').and.not.empty;",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/brands", "host": [ "{{baseUrl}}" ], "path": [ "brands" ] }
+      },
+      "response": []
+    },
+    {
+      "name": "2. GET /products",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('The body is an object with a data list inside', function () {",
+              "    var body = pm.response.json();",
+              "    pm.expect(body).to.be.an('object');",
+              "    pm.expect(body.data).to.be.an('array').that.is.not.empty;",
+              "});",
+              "// keep a real id for the next request",
+              "pm.collectionVariables.set('productId', pm.response.json().data[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/products", "host": [ "{{baseUrl}}" ], "path": [ "products" ] }
+      },
+      "response": []
+    },
+    {
+      "name": "3. GET /products/{id} (real id from the list)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('The product has the id that was asked for', function () {",
+              "    pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('productId'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": [ "{{baseUrl}}" ], "path": [ "products", "{{productId}}" ] }
+      },
+      "response": []
+    },
+    {
+      "name": "4. GET /products/{id} (made-up id)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 404', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "pm.test('The message says the item was not found', function () {",
+              "    pm.expect(pm.response.json().message).to.eql('Requested item not found');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Accept", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/products/this-id-does-not-exist", "host": [ "{{baseUrl}}" ], "path": [ "products", "this-id-does-not-exist" ] }
+      },
+      "response": []
+    },
+    {
+      "name": "5. POST /users/login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('access_token is at the top level of the body and is not empty', function () {",
+              "    pm.expect(pm.response.json().access_token).to.be.a('string').and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"customer@practicesoftwaretesting.com\", \"password\": \"welcome01\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/users/login", "host": [ "{{baseUrl}}" ], "path": [ "users", "login" ] }
+      },
+      "response": []
+    }
+  ]
+}
