@@ -25,7 +25,7 @@ All 6 tests are in `src/test/java/ToolshopApiTest.java`. The Jira key is at the 
 
 ## Notes
 
-- No product ID is hardcoded. The unknown ID is a random UUID.
+- No product ID is hardcoded. The unknown ID is a random UUID. The API also reseeds its data: the IDs of brands and products were different in the evening from the afternoon of the same day (the names, prices and structure stayed the same).
 - The unknown email test uses an email that does not exist. The seeded demo account is only used for the valid login test, because repeated failed logins can lock it.
 - The tests call the live API, so they need internet. A shared public API can be slow or give a one-off error: I saw one `500` on the unknown ID test during development, and it did not come back in 40 more tries.
 - The Toolshop API answers `GET /brands` with a plain list, but `GET /products` and `GET /products/search` answer with an object where the products are in `data`.
