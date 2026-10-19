@@ -39,7 +39,7 @@ Dependencies are jar files. Maven downloads them for me, so I do not download ja
 - Put `rest-assured` BEFORE the JUnit dependency in `pom.xml`, so the right version of Hamcrest is used.
 - With Java 9 or newer and a problem with split packages, use `rest-assured-all` instead.
 - Static imports that make the code short: `io.restassured.RestAssured.*`, `io.restassured.matcher.RestAssuredMatchers.*` and `org.hamcrest.Matchers.*`.
-- The JUnit overview page I was given says JUnit 6.1.3 needs Java 17 or higher. The task says JUnit 5, so I use 5.13.4.
+- The JUnit user guide overview (version 6.1.3) says JUnit needs Java 17 or higher at runtime. I am working with JUnit 5, so I use 5.13.4.
 
 ## given(), when() and then()
 A REST Assured test reads like a test case. The three words are the three parts of it:
