@@ -15,3 +15,9 @@ From this folder:
 | Class | What it checks |
 |---|---|
 | `FirstTest` | Chrome opens by itself, goes to the home page and the page title contains "Practice Software Testing". The browser is started in `@BeforeEach` and closed with `driver.quit()` in `@AfterEach`. |
+| `LoginTest` | Two login tests on https://practicesoftwaretesting.com/auth/login. TF40-81: a registered user logs in and lands on the account page (the page title contains "My account"). TF40-82: an unknown email shows the error "Invalid email or password". Every wait is an explicit `WebDriverWait` of 10 seconds, with no `Thread.sleep`. The locators are `data-test` CSS selectors. |
+
+## Notes
+
+- The valid login uses a new user that `@BeforeAll` registers through the API (`POST /users/register`, an email with the time in it). No test uses a seeded or shared account, because the shop data is shared with everyone and resets.
+- Each `@DisplayName` starts with its Jira key. The story is TF40-79, the precondition is TF40-80.
