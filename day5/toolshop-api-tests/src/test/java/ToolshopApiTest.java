@@ -11,25 +11,15 @@ import static org.hamcrest.Matchers.nullValue;
 
 import java.util.UUID;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 
-public class ToolshopApiTest {
-
-    // the clean Toolshop API (every endpoint is in the Swagger docs at /docs)
-    private static final String BASE_URI = "https://api.practicesoftwaretesting.com";
+public class ToolshopApiTest extends BaseApiTest {
 
     // a JWT is three parts made of letters, digits, - and _, split by dots
     private static final String JWT_PATTERN = "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$";
-
-    @BeforeAll
-    static void setUp() {
-        RestAssured.baseURI = BASE_URI;
-    }
 
     // GET /brands gives a plain list (a JSON array), not an object with a "data" list
     @Test
