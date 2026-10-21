@@ -8,6 +8,9 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
@@ -77,6 +80,26 @@ public class ToolshopApiTest extends BaseApiTest {
             .body("data.size()", greaterThan(0))                                 // the page has products
             .body("data.findAll { !it.name }", empty())                           // no product without a name
             .body("data.findAll { it.price == null || it.price <= 0 }", empty()); // no product without a price above 0
+    }
+
+    // The id comes from the list (it changes when the API reseeds), then the one product is turned into a Product object.
+    @Test
+    @DisplayName("Get one product by an ID from the list and read it as a Product")
+    void productByIdIsReadAsProductObject() {
+        String id = given().when().get("/products").then().statusCode(200)
+                .extract().path("data[0].id");
+
+        Product product = given()
+            .pathParam("id", id)
+        .when()
+            .get("/products/{id}")
+        .then()
+            .statusCode(200)
+            .extract().as(Product.class);
+
+        assertEquals(id, product.getId());
+        assertFalse(product.getName().isEmpty());
+        assertTrue(product.getPrice() > 0);
     }
 
     // the demo customer from the Swagger docs. Only the valid login test uses this account.
