@@ -149,6 +149,19 @@ public class ToolshopApiTest extends BaseApiTest {
             .body("access_token", matchesPattern(JWT_PATTERN)); // and it is a real JWT: 3 parts split by dots
     }
 
+    // the token from @BeforeAll goes in the Authorization header, and the API answers with my own user
+    @Test
+    @DisplayName("GET /users/me with the token returns my registered user")
+    void meReturnsMyRegisteredUser() {
+        given()
+            .header("Authorization", "Bearer " + token)
+        .when()
+            .get("/users/me")
+        .then()
+            .statusCode(200)
+            .body("email", equalTo(email));
+    }
+
     // an email that does not exist. Never use the seeded account here: repeated failed logins can lock it.
     @Test
     @DisplayName("TF40-78: Login with an unknown email is rejected")
