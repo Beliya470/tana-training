@@ -83,9 +83,7 @@ public class ToolshopApiTest extends BaseApiTest {
     @Test
     @DisplayName("TF40-77: Valid login returns an access_token")
     void validLoginReturnsAccessToken() {
-        String body = """
-                {"email": "customer@practicesoftwaretesting.com", "password": "welcome01"}
-                """;
+        LoginRequest body = new LoginRequest("customer@practicesoftwaretesting.com", "welcome01");
 
         given()
             .contentType(ContentType.JSON)
@@ -102,9 +100,7 @@ public class ToolshopApiTest extends BaseApiTest {
     @Test
     @DisplayName("TF40-78: Login with an unknown email is rejected")
     void loginWithUnknownEmailIsRejected() {
-        String body = """
-                {"email": "nobody.unknown@example.com", "password": "wrong-password-1"}
-                """;
+        LoginRequest body = new LoginRequest("nobody.unknown@example.com", "wrong-password-1");
 
         given()
             .contentType(ContentType.JSON)
