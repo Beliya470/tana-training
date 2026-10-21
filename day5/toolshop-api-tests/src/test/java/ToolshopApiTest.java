@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,35 @@ public class ToolshopApiTest extends BaseApiTest {
 
     // a JWT is three parts made of letters, digits, - and _, split by dots
     private static final String JWT_PATTERN = "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$";
+
+    // my own user, made fresh for each run, so no test depends on a seeded or shared account
+    private static final String PASSWORD = "Str0ng!Pass#2026";
+    private static String email;
+    private static String token;
+
+    // runs after BaseApiTest sets the base URI: register a new user, log in and keep the token
+    @BeforeAll
+    static void registerUserAndLogin() {
+        email = "fellow+" + System.currentTimeMillis() + "@test.com";
+
+        RegisterRequest user = new RegisterRequest("Anne", "Tester", email, PASSWORD, "1990-05-15");
+        given()
+            .contentType(ContentType.JSON)
+            .body(user)
+        .when()
+            .post("/users/register")
+        .then()
+            .statusCode(201);
+
+        token = given()
+            .contentType(ContentType.JSON)
+            .body(new LoginRequest(email, PASSWORD))
+        .when()
+            .post("/users/login")
+        .then()
+            .statusCode(200)
+            .extract().path("access_token");
+    }
 
     // GET /brands gives a plain list (a JSON array), not an object with a "data" list
     @Test
@@ -102,11 +132,11 @@ public class ToolshopApiTest extends BaseApiTest {
         assertTrue(product.getPrice() > 0);
     }
 
-    // the demo customer from the Swagger docs. Only the valid login test uses this account.
+    // the valid login uses the user that was registered in @BeforeAll, not the seeded demo customer
     @Test
     @DisplayName("TF40-77: Valid login returns an access_token")
     void validLoginReturnsAccessToken() {
-        LoginRequest body = new LoginRequest("customer@practicesoftwaretesting.com", "welcome01");
+        LoginRequest body = new LoginRequest(email, PASSWORD);
 
         given()
             .contentType(ContentType.JSON)
