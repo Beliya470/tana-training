@@ -61,3 +61,29 @@ So the plan is 12 API, 4 UI (TF40-31, TF40-46, TF40-37, TF40-42) and 4 manual, w
 - First ask: can this be checked at the API? If yes, do it there. It is faster and breaks less.
 - Keep UI tests for the journeys that matter and for bugs that only the screen shows.
 - Do not automate what is new, changing, or a matter of looking.
+
+## Flaky tests and failed tests
+
+**What I watched and read**
+- Video (What is a Flaky Test, What Causes Flaky Tests): a flaky test sometimes passes and sometimes fails, with no change in the code. Developers start to say "just rerun the build", and then nobody knows if a red test is a bug or not.
+- Ranorex, Flaky Tests in Automation: flaky tests waste QA time, slow the release, lower the trust in automation and hurt morale. The common causes are timing (hard-coded waits), an unstable environment or network, reused or shared data, and fragile locators. The way to deal with them: find the pattern, collect the logs and screenshots, stabilize the test, quarantine it (take it out of the main run) and run it again until it is stable.
+
+**What is the difference between a flaky test and a failed test?**
+A failed test fails every time with the same input, because there is a real bug or a real problem in the environment. It is clear and can be fixed once. A flaky test gives different results on the same code and the same input: green on one run and red on the next. A failed test tells me something is wrong. A flaky test tells me nothing, because I cannot tell if the failure is real.
+
+| | Failed test | Flaky test |
+|---|---|---|
+| Result on the same code | Always the same | Changes between runs |
+| What it means | A real bug, or the test is wrong | Unknown: a bug, or just noise |
+| Fix | One fix, and it stays green | Hard to find, because it does not fail on demand |
+| Trust | Keeps the trust | Destroys the trust |
+
+**Why flaky tests are especially dangerous in a CI pipeline**
+- The pipeline runs by itself, so people trust it without looking. When a test is flaky, the team learns to rerun the build and to ignore red results.
+- Then a real bug can be called "just the flaky test" and reach the users. A flaky test on an important flow is worse than no test, because it looks like protection.
+- Every rerun costs time and blocks pull requests and releases.
+
+**One example of each cause**
+- *Failed test:* In my suite, `GET /products/search?q=pliers` must return 4 products. If a developer breaks the search so that it returns nothing, the test fails on every run until the bug is fixed. This is a real failure.
+- *Flaky test:* The Day 5 login test used the seeded demo customer of the Toolshop. That account is shared with everyone on the internet. It passed in the morning of 21 October and later the same day the same request gave 401, with no change in my code. The cause is shared data that someone else changes. The fix is what the refactor does: each run registers its own new user with a unique email.
+- Other causes I know now: hard-coded waits in UI tests, a slow or down network, and tests that depend on each other or on the order they run.
