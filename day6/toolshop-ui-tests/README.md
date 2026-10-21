@@ -21,3 +21,4 @@ From this folder:
 
 - The valid login uses a new user that `@BeforeAll` registers through the API (`POST /users/register`, an email with the time in it). No test uses a seeded or shared account, because the shop data is shared with everyone and resets.
 - Each `@DisplayName` starts with its Jira key. The story is TF40-79, the precondition is TF40-80.
+| `LoginPage`, `AccountPage` | Page objects (not tests). `LoginPage` keeps the locators of the login page as private fields and has `open()`, `loginAs(email, password)` and `getErrorText()`. `AccountPage` has `getTitleText()` for the account page. The assertions stay in `LoginTest`. |
