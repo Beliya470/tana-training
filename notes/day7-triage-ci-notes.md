@@ -47,7 +47,7 @@ How I decided each one:
 - Scripted is plain Groovy code: loops, if/else, try/catch. It is powerful but harder to read and to maintain.
 - Best practice is a mix: declarative as the base, and a `script { }` block in the one stage that needs real code.
 
-**Using a Jenkinsfile (Jenkins docs)** was my reference when I wrote my Jenkinsfile. The parts I used: `pipeline`, `agent`, `stages`/`stage`/`steps`, `sh`, `checkout scm`, `junit` and `post { always { ... } }`. `junit` reads the XML reports of the tests. Jenkins marks the build unstable (yellow) when tests fail, and `post { always }` makes sure the results are published even then.
+**Using a Jenkinsfile (Jenkins docs)** was my reference when I wrote my Jenkinsfile. The parts I used: `pipeline`, `agent`, `stages`/`stage`/`steps`, `sh`, `checkout scm`, `junit` and `post { always { ... } }`. `junit` reads the XML reports of the tests. In the doc, the `junit` step records the failures so Jenkins can show them in the web UI, and a `post { always }` block runs whatever the result of the stages. In my file `mvn test` returns an error code when a test fails, so that stage fails and the next stages are skipped, and `post { always }` still publishes the results. The doc also says that `agent` checks out the source by default; I kept `checkout scm` in the Checkout stage because the task asks for that stage.
 
 ### Answers
 
@@ -60,7 +60,7 @@ CI is a robot that builds my code and runs my tests every time somebody pushes a
 - `stages { ... }` holds the list of `stage` blocks that run in order. In my Jenkinsfile they are Checkout, Build, API Tests and UI Tests (headless). If one stage fails, the next ones do not run.
 
 **Where do you find test results in a Jenkins build, and what would your first steps be if you saw a red build?**
-The results are on the build page under "Test Result" (this appears because of the `junit` step), and the full log is in "Console Output". If the build is red, I would:
+The test results are recorded by the `junit` step and shown in the web UI of the build, and the full log is in the console output of the build. If the build is red, I would:
 1. Open the build and see which stage is red.
 2. Open Console Output and go to the first `[ERROR]` line, with the test name and the line number.
 3. Decide whose problem it is: my test, the product, or the environment (the same three questions as in my triage table).
@@ -71,11 +71,16 @@ The results are on the build page under "Test Result" (this appears because of t
 The pipeline is where my tests really run, and nobody sees my computer. When a build is red, I am the one who must say if it is the tests, the product or the server. I cannot do that if I do not know which stage ran what, where the logs are and where the reports are. Also, a test that passes on my machine can fail in CI (for example no screen, a different Chrome, a slower network), and I must know why.
 
 ## Headless Chrome
-The Udemy lecture "Execute test script in Chrome headless mode" would not open for me (the page kept loading), so I did not watch it. I did the task from the idea in the task text: a CI server has no screen, so Chrome must run without a window. I tried it myself:
-- I added `DriverFactory` to my UI project. It starts Chrome with `--headless=new` and a window size of 1920x1080 when I run Maven with `-Dheadless=true`. Without the option it starts a normal window like before. `FirstTest` and `LoginTest` use it.
-- `mvn test -Dheadless=true` in `day6/toolshop-ui-tests`: 3 tests, 0 failures, `BUILD SUCCESS`.
-- I set the window size because a headless window is small by default, and an element can be hidden in a small window.
-- Later the same day the same command failed 4 times out of 5. Each time one test stopped for 3 to 4 minutes on `driver.get(...)` with a `TimeoutException`, in the visible Chrome as well as in headless mode. At the same time `curl` loaded the same page in under 1 second. So the code was not the problem, and headless was not the problem: Chrome did not finish loading the page, which I count as an environment issue on my network. I did not change any code for it. I tried `PageLoadStrategy.EAGER` once, it did not fix it for sure (one run passed, the next one failed), so I took it out again.
+**Execute test script in Chrome headless mode (Udemy, 2:57)**
+- The instructor has a script that opens Chrome, goes to the Google page and prints the page title and the current URL. He runs it normally first: Chrome opens on the screen and the console shows the title and the URL.
+- To run it headless he makes one change. He creates a `ChromeOptions` object, calls `options.addArguments("--headless")`, and passes the `options` object into the `ChromeDriver` constructor.
+- He runs it again: no Chrome window appears, but the console shows the same title and URL. The browser runs in the background and Selenium does the same actions. His point: in normal mode the browser window is visible, in headless mode the browser runs without showing the window.
+
+**What I did with it**
+- I added `DriverFactory` to my UI project. It does the same three steps as the lecture: `ChromeOptions`, `addArguments("--headless")`, and the options passed to `new ChromeDriver(options)`. It only does this when I run Maven with `-Dheadless=true`. Without the option it starts a normal window like before. `FirstTest` and `LoginTest` use it.
+- The window size `--window-size=1920,1080` is my own addition, it is not in the lecture. I added it so the headless page has a normal desktop size.
+- `mvn test -Dheadless=true` in `day6/toolshop-ui-tests`: 3 tests, 0 failures, `BUILD SUCCESS` in 18 seconds.
+- Earlier the same day (when I used `--headless=new` instead of the lecture's `--headless`), the same command failed 4 times out of 5. Each time one test stopped for 3 to 4 minutes on `driver.get(...)` with a `TimeoutException`, in the visible Chrome as well as in headless mode, while `curl` loaded the same page in under 1 second. So headless was not the cause: Chrome did not finish loading the page, which I count as an environment issue on my network at that time. I tried `PageLoadStrategy.EAGER` once, it did not fix it for sure (one run passed, the next failed), so I took it out. Later the runs were green again.
 
 ## The Jenkinsfile
 `Jenkinsfile` is in the root of the repo. I did not run Jenkins (the task says I do not need to), so I checked the commands one by one on my computer instead:
@@ -85,7 +90,7 @@ The Udemy lecture "Execute test script in Chrome headless mode" would not open f
 | Checkout | `checkout scm` | Jenkins does this itself. I could not run it. |
 | Build | `mvn -f .../pom.xml compile` for the API and UI projects | Both compile without error. |
 | API Tests | `mvn -f day5/toolshop-api-tests/pom.xml test` | 8 tests green. |
-| UI Tests (headless) | `mvn -f day6/toolshop-ui-tests/pom.xml test -Dheadless=true` | 3 tests green on the first run. Later runs hung on page loads (see Headless Chrome). |
+| UI Tests (headless) | `mvn -f day6/toolshop-ui-tests/pom.xml test -Dheadless=true` | 3 tests green, 18 seconds. (An earlier hang on page loads is described in Headless Chrome.) |
 
 `post { always { junit '**/target/surefire-reports/*.xml' } }` publishes the results of both projects. I used `sh` because a normal Jenkins agent is Linux. On my Windows computer it would need `bat`.
 
