@@ -87,17 +87,26 @@ The pipeline is where my tests really run, and nobody sees my computer. When a b
 - `mvn test -Dheadless=true` in `day6/toolshop-ui-tests`: 3 tests, 0 failures, `BUILD SUCCESS` in 18 seconds.
 - Earlier the same day (when I used `--headless=new` instead of the lecture's `--headless`), the same command failed 4 times out of 5. Each time one test stopped for 3 to 4 minutes on `driver.get(...)` with a `TimeoutException`, in the visible Chrome as well as in headless mode, while `curl` loaded the same page in under 1 second. So headless was not the cause: Chrome did not finish loading the page, which I count as an environment issue on my network at that time. I tried `PageLoadStrategy.EAGER` once, it did not fix it for sure (one run passed, the next failed), so I took it out. Later the runs were green again.
 
-## The Jenkinsfile
-`Jenkinsfile` is in the root of the repo. I did not run Jenkins (the task says I do not need to), so I checked the commands one by one on my computer instead:
+## The Jenkinsfile, run in a real Jenkins
+`Jenkinsfile` is in the root of the repo. The task says I do not need to run Jenkins, but I did, so that Jenkins itself checks the syntax and the stages.
 
-| Stage | Command in the file | What I checked |
-|---|---|---|
-| Checkout | `checkout scm` | Jenkins does this itself. I could not run it. |
-| Build | `mvn -f .../pom.xml compile` for the API and UI projects | Both compile without error. |
-| API Tests | `mvn -f day5/toolshop-api-tests/pom.xml test` | 8 tests green. |
-| UI Tests (headless) | `mvn -f day6/toolshop-ui-tests/pom.xml test -Dheadless=true` | 3 tests green, 18 seconds. (An earlier hang on page loads is described in Headless Chrome.) |
+**How I set it up (on my own computer, only for this test)**
+- I downloaded the official `jenkins.war` (LTS 2.580.1, 54 MB) from get.jenkins.io and started it with `java -jar jenkins.war --httpPort=8081`. No installer was needed. I turned off the setup wizard and I stopped Jenkins after the test, because I started it without a login.
+- I installed the plugins Pipeline (`workflow-aggregator`), Git, JUnit and Pipeline Stage View.
+- I made one Pipeline job, "Pipeline script from SCM", that reads the `Jenkinsfile` from my repo (a local copy of the repo with my Jenkinsfile branch merged with `main`, so it had the refactored 8-test API suite).
+- Two things stopped the first builds, and I fixed them: Jenkins refuses to check out from a local folder (I allowed it with `-Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true`), and the Jenkins folder path was too long for Git on Windows (I moved it to `C:\Users\user\jk`). The `sh` steps worked on Windows because Git for Windows has an `sh`.
 
-`post { always { junit '**/target/surefire-reports/*.xml' } }` publishes the results of both projects. I used `sh` because a normal Jenkins agent is Linux. On my Windows computer it would need `bat`.
+**Result**
+| Build | What happened |
+|---|---|
+| #3, green | Checkout, Build, API Tests (8 passed), UI Tests headless (3 passed). `junit` published 11 results. |
+| #4, red on purpose | I changed the `/brands` test to expect 201 (the same bug as Failure 1 in my triage). The API Tests stage failed with `Expected status code <201> but was <200>`, the UI stage was skipped (`Stage "UI Tests (headless)" skipped due to earlier failure(s)`), and `post { always }` still published the results. |
+
+**A problem Jenkins showed me, and the fix**
+In the red build #4 the test report still counted my 3 UI tests, although that stage was skipped. They were old report files from build #3, left in the same workspace. That gives a wrong picture. I changed the Build stage to `mvn clean compile` for both projects, so old reports are deleted at the start of every build.
+- After the fix: build #5 green, 11 of 11 passed. Build #6 red on purpose: only the API suite is in the report, 7 passed and 1 failed (`brandsReturnsNonEmptyListWithNames`), the UI stage skipped, no old results.
+
+**Where I look when a build is red** (from this run): the Stage View shows which stage is red; the Tests page of the build lists the failed test; the Console Output has the `[ERROR]` line with the test name, the line number and `Expected status code <201> but was <200>`.
 
 ## "My test failed, now what" checklist
 1. **Read the first error line.** Write down the test name, the line number, and what was expected and what happened.
@@ -107,17 +116,17 @@ The pipeline is where my tests really run, and nobody sees my computer. When a b
 5. **Write the evidence and decide.** Fix the test, log a bug with the request, the response and the steps, or report the environment. Put the exact line that told me in the ticket.
 
 ## Linux log reading and the broken Pod (Killercoda)
-Killercoda allows one playground at a time, so I ran the Linux commands on the Ubuntu 24.04 node of the Kubernetes playground.
+I did the Linux part in the Killercoda **Ubuntu 24.04** playground and the Pod part in the **Kubernetes** playground (one playground at a time, I exited the first before I started the second).
 
-**Logs in `/var/log`**
-- `cd /var/log` and `ls` show the log files: `syslog`, `dpkg.log`, `auth.log`, `kern.log`, `cloud-init.log` and others.
-- `cat README | head -8` reads a small file. `less dpkg.log` opens a long one page by page (`q` to leave). `tail -f syslog` follows the file live, new lines appear at the bottom (Ctrl+C to stop).
-- `grep -i error /var/log/*.log` found a lot of lines that are not problems: the package name `libgpg-error-dev` in `dpkg.log` and a legend line in the Xorg log. The real ones were in `apport.log` (`ERROR: apport ... report ... already exists and unseen`) and `cloud-init.log` (`RuntimeError: Runparts: 1 failures`). So grep gives me candidates, and I must read each line to know which is a real error.
+**Logs in `/var/log` (Ubuntu playground)**
+- `cd /var/log` and `ls` show the log files: `syslog`, `dpkg.log`, `auth.log`, `kern.log`, `cloud-init.log`, `dmesg` and others.
+- `cat README` reads a small file. It says the traditional logs are being replaced by the systemd journal (`journalctl`). `less dpkg.log` opens a long file page by page (`q` to leave). `tail -f syslog` follows the file live, new lines appear at the bottom (Ctrl+C to stop).
+- `grep -i error /var/log/*.log` found lines that are not problems: the package name `libgpg-error-dev` in `dpkg.log`, and the kernel line `RAS: Correctable Errors collector initialized` in `kern.log` (it is a normal start message with the word "Errors" in it). The real one was in `cloud-init.log`: `RuntimeError: Runparts: 1 failures (runcmd) in 1 attempted commands`. So grep gives me candidates, and I must read each line to know which is a real error.
 
-**Broken Pod**
-1. `kubectl create namespace tufin-qa`, then I wrote `debug-pod-1.yaml` with `cat` and a heredoc (not `nano`, the content is the same as in the task) and ran `kubectl apply -f debug-pod-1.yaml`.
-2. `kubectl get pods -n tufin-qa`: `debug-pod-1   0/1   ImagePullBackOff`.
+**Broken Pod (Kubernetes playground)**
+1. `kubectl create namespace tufin-qa`, then `nano debug-pod-1.yaml`, I typed the YAML of the task, saved with Ctrl+O and Enter, and left with Ctrl+X.
+2. `kubectl apply -f debug-pod-1.yaml`, then `kubectl get pods -n tufin-qa`: `debug-pod-1   0/1   ImagePullBackOff`.
 3. `kubectl describe pod debug-pod-1 -n tufin-qa`, Events: `Failed to pull image "tufin/securechange:v99.9": ... docker.io/tufin/securechange:v99.9: not found`, then `Error: ErrImagePull` and `Error: ImagePullBackOff`.
-4. I changed the image line to `nginx` and ran `kubectl apply` again. After about 30 seconds: `debug-pod-1   1/1   Running`.
+4. In `nano` I replaced the `image` line with `image: nginx`, saved, and ran `kubectl apply -f debug-pod-1.yaml` again (`pod/debug-pod-1 configured`). After about 30 seconds: `debug-pod-1   1/1   Running`.
 
 Why it failed: the image `tufin/securechange:v99.9` does not exist in the registry, so Kubernetes could not pull it and the container never started. The fix was in the YAML and not in the app, so I count it as an environment problem. The Events section at the bottom of `describe` is the first place to look, because it names the exact reason.
