@@ -29,6 +29,11 @@ How I decided each one:
 2. **Failure 2:** "Name or service not known" sounds like a network problem. I checked where the host name comes from. It comes from `BaseApiTest`, and the name is misspelled. If the name was correct and still did not resolve, it would be an environment issue. The fix is one letter in one place, which is the reason I have a base class.
 3. **Failure 3:** the request is a normal one and the status is a server error with a generic body. The server should answer 404 for an id that does not exist. One caution: when I sent the same request to the live API, I got 404 with `{"message":"Requested item not found"}` 5 times out of 5, and on Day 5 one 500 on an unknown id could not be reproduced in 46 tries. So before I report it I would run the test again and look at the server log. If the 500 comes back every time, it is a product defect. If it never comes back, it was a one-off problem of the environment.
 
+**I reproduced the first two on my own suite (in a copy, nothing changed in the repo):**
+- Failure 1: I changed the expected status of my `/brands` test to 201 and ran it. Result: `Expected status code <201> but was <200>.` at `ToolshopApiTest.java:65`. The same message as in the task, from my own code.
+- Failure 2: I ran my brands test with `-Dbase.uri=https://api.practicesoftwaretesting.co`. Result: `java.net.UnknownHostException: No such host is known (api.practicesoftwaretesting.co)`. The same kind of error as in the task, caused only by the wrong host name in the setup.
+- Failure 3 I could not reproduce (404 five times out of five), as written above.
+
 ## CI and Jenkins
 
 **Continuous Integration Explained (Harness)**
