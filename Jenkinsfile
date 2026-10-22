@@ -13,9 +13,9 @@ pipeline {
 
         stage('Build') {
             steps {
-                // compiles the main code of both projects. Stops the build early if something does not compile.
-                sh 'mvn -f day5/toolshop-api-tests/pom.xml compile'
-                sh 'mvn -f day6/toolshop-ui-tests/pom.xml compile'
+                // cleans and compiles both projects. Clean removes old reports, so a skipped stage cannot publish the results of an earlier build.
+                sh 'mvn -f day5/toolshop-api-tests/pom.xml clean compile'
+                sh 'mvn -f day6/toolshop-ui-tests/pom.xml clean compile'
             }
         }
 
