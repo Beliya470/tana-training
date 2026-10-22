@@ -112,3 +112,32 @@ I read the first three from the login page in Chrome. The error and the page tit
 - Each test opens the login page, waits until the email field is visible (`WebDriverWait`, 10 seconds, `visibilityOfElementLocated`), types the email and the password, and clicks Login. The valid test waits for `page-title` and checks that it contains "My account". The invalid test waits for `login-error` and checks that it is shown and says "Invalid email or password". There is no `Thread.sleep` anywhere.
 - The valid test uses a user that `@BeforeAll` registers with `POST /users/register` (a new email with the time in it). It uses the Java `HttpClient`, so there is no new library. No test relies on a seeded or shared account.
 - Both tests passed 3 runs in a row.
+
+## Page Object Model
+
+**Page Object Model Design Pattern Introduction (Udemy, 11:42)**
+- A UI test for login has the same steps each time: type the user name, type the password, click Login. Each step has two parts: find the element (`driver.findElement`, with a locator) and do the action on it (`sendKeys`, `click`).
+- Problems when everything is in the test class (the lecture shows four login tests): 1) the same lines are repeated in every test (100 login tests means the same code 100 times), 2) one change, for example a new locator of the user name field, must be made in every test, 3) it is hard to change many classes without missing one, 4) the locators and the tests are mixed in one class, which is hard to read and to maintain, 5) there is no standard, so the code is bad code for other people.
+- Page Object Model is a design pattern, not a framework. It is a set of guidelines: do not put locators and test cases in the same class. Make two kinds of classes. In a page class write the locators and the methods that act on them. In a test class write only the test cases. And make one class for each page of the application (a login page class, a home page class), each with only the locators of its own page.
+- Benefit: if the login button locator changes, I open the login page class and fix it in one place. The code is easier to read, easier to maintain and easier for other people to understand.
+- Skipped, as the task says: the Page Factory lectures.
+
+## What I built with it
+- `LoginPage`: the constructor takes the `WebDriver`. The locators are `private final By` fields. The methods are `open()` (opens the page and waits until the email field is visible), `loginAs(email, password)` (types both and clicks Login) and `getErrorText()` (waits for the error and gives its text).
+- `AccountPage`: a second small page class, because the account page that opens after the login is another page. It has `getTitleText()`, which waits for `page-title`.
+- `LoginTest` has no locator and no `findElement` any more. It says what happens: open, log in as, and check. The assertions stay in the test, not in the page classes. Both tests are green again after the change.
+
+## Flakiness drill
+I replaced the explicit wait for the account page title with `Thread.sleep(500)` followed by `findElement`, and ran `mvn test -Dtest=LoginTest` 5 times.
+
+| Run | Valid login (TF40-81) | Unknown email (TF40-82) |
+|---|---|---|
+| 1 | Fail: NoSuchElementException for `[data-test='page-title']` | Pass |
+| 2 | Fail: NoSuchElementException | Pass |
+| 3 | Fail: NoSuchElementException | Pass |
+| 4 | Fail: NoSuchElementException | Pass |
+| 5 | Fail: NoSuchElementException | Pass |
+
+On my computer and my network, half a second was never enough for the account page to open after the login, so the valid login failed 5 times of 5 (the unknown-email test did not use the sleep and passed every time). On a faster connection the same sleep could pass, and then fail again on a slow day. That is the nature of a flaky test: the result depends on speed and not on the code. I put the explicit wait back and the 2 login tests are green again.
+
+**Why the explicit wait is more reliable:** it waits for the real condition (the title is visible), up to 10 seconds, so it works on a fast and on a slow day, while a fixed sleep guesses the time.

@@ -4,23 +4,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class LoginTest {
 
-    private static final String LOGIN_URL = "https://practicesoftwaretesting.com/auth/login";
     private static final String REGISTER_URL = "https://api.practicesoftwaretesting.com/users/register";
 
     // my own user, made fresh for each run (the shop data is shared and resets)
@@ -28,14 +21,7 @@ public class LoginTest {
     private static String email;
 
     private WebDriver driver;
-    private WebDriverWait wait;
-
-    // the data-test locators found with Chrome DevTools on the login page
-    private final By emailField = By.cssSelector("[data-test='email']");
-    private final By passwordField = By.cssSelector("[data-test='password']");
-    private final By loginButton = By.cssSelector("[data-test='login-submit']");
-    private final By loginError = By.cssSelector("[data-test='login-error']");
-    private final By pageTitle = By.cssSelector("[data-test='page-title']");
+    private LoginPage loginPage;
 
     // register a new user through the API, so the valid login test does not depend on a shared account
     @BeforeAll
@@ -55,8 +41,8 @@ public class LoginTest {
 
     @BeforeEach
     void setUp() {
-        driver = new ChromeDriver();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        driver = DriverFactory.createChrome();
+        loginPage = new LoginPage(driver);
     }
 
     @AfterEach
@@ -67,29 +53,20 @@ public class LoginTest {
     @Test
     @DisplayName("TF40-81: Valid login with a registered user lands on the account page")
     void validLoginLandsOnAccountPage() {
-        driver.get(LOGIN_URL);
-        wait.until(ExpectedConditions.visibilityOfElementLocated(emailField));
+        loginPage.open();
+        loginPage.loginAs(email, PASSWORD);
 
-        driver.findElement(emailField).sendKeys(email);
-        driver.findElement(passwordField).sendKeys(PASSWORD);
-        driver.findElement(loginButton).click();
-
-        WebElement title = wait.until(ExpectedConditions.visibilityOfElementLocated(pageTitle));
-        assertTrue(title.getText().contains("My account"), "The title was: " + title.getText());
+        String title = new AccountPage(driver).getTitleText();
+        assertTrue(title.contains("My account"), "The title was: " + title);
     }
 
     @Test
     @DisplayName("TF40-82: Login with an unknown email shows an error message")
     void loginWithUnknownEmailShowsError() {
-        driver.get(LOGIN_URL);
-        wait.until(ExpectedConditions.visibilityOfElementLocated(emailField));
+        loginPage.open();
+        loginPage.loginAs("nobody.unknown@example.com", "wrong-password-1");
 
-        driver.findElement(emailField).sendKeys("nobody.unknown@example.com");
-        driver.findElement(passwordField).sendKeys("wrong-password-1");
-        driver.findElement(loginButton).click();
-
-        WebElement error = wait.until(ExpectedConditions.visibilityOfElementLocated(loginError));
-        assertTrue(error.isDisplayed());
-        assertTrue(error.getText().contains("Invalid email or password"), "The error was: " + error.getText());
+        String error = loginPage.getErrorText();
+        assertTrue(error.contains("Invalid email or password"), "The error was: " + error);
     }
 }
