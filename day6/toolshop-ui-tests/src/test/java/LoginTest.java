@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 
 public class LoginTest {
 
@@ -42,7 +41,7 @@ public class LoginTest {
 
     @BeforeEach
     void setUp() {
-        driver = new ChromeDriver();
+        driver = DriverFactory.createChrome();
         loginPage = new LoginPage(driver);
     }
 

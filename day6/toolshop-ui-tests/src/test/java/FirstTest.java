@@ -4,7 +4,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 
 public class FirstTest {
 
@@ -13,7 +12,7 @@ public class FirstTest {
     // a new Chrome window for every test
     @BeforeEach
     void setUp() {
-        driver = new ChromeDriver();
+        driver = DriverFactory.createChrome();
     }
 
     // quit() closes the browser and ends the session. close() would only close the window.
