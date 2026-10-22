@@ -95,3 +95,19 @@ The Udemy lecture "Execute test script in Chrome headless mode" would not open f
 3. **Check if the system can be reached.** Does the same host answer from the terminal (`curl`, `nslookup`)? Do other tests pass? If not, it is an environment issue, and I tell the team with the exact message.
 4. **Run it again, alone, a few times.** Fails every time with a correct test: it is real. Fails once and passes next time: it is flaky, so I do not report a bug yet.
 5. **Write the evidence and decide.** Fix the test, log a bug with the request, the response and the steps, or report the environment. Put the exact line that told me in the ticket.
+
+## Linux log reading and the broken Pod (Killercoda)
+Killercoda allows one playground at a time, so I ran the Linux commands on the Ubuntu 24.04 node of the Kubernetes playground.
+
+**Logs in `/var/log`**
+- `cd /var/log` and `ls` show the log files: `syslog`, `dpkg.log`, `auth.log`, `kern.log`, `cloud-init.log` and others.
+- `cat README | head -8` reads a small file. `less dpkg.log` opens a long one page by page (`q` to leave). `tail -f syslog` follows the file live, new lines appear at the bottom (Ctrl+C to stop).
+- `grep -i error /var/log/*.log` found a lot of lines that are not problems: the package name `libgpg-error-dev` in `dpkg.log` and a legend line in the Xorg log. The real ones were in `apport.log` (`ERROR: apport ... report ... already exists and unseen`) and `cloud-init.log` (`RuntimeError: Runparts: 1 failures`). So grep gives me candidates, and I must read each line to know which is a real error.
+
+**Broken Pod**
+1. `kubectl create namespace tufin-qa`, then I wrote `debug-pod-1.yaml` with `cat` and a heredoc (not `nano`, the content is the same as in the task) and ran `kubectl apply -f debug-pod-1.yaml`.
+2. `kubectl get pods -n tufin-qa`: `debug-pod-1   0/1   ImagePullBackOff`.
+3. `kubectl describe pod debug-pod-1 -n tufin-qa`, Events: `Failed to pull image "tufin/securechange:v99.9": ... docker.io/tufin/securechange:v99.9: not found`, then `Error: ErrImagePull` and `Error: ImagePullBackOff`.
+4. I changed the image line to `nginx` and ran `kubectl apply` again. After about 30 seconds: `debug-pod-1   1/1   Running`.
+
+Why it failed: the image `tufin/securechange:v99.9` does not exist in the registry, so Kubernetes could not pull it and the container never started. The fix was in the YAML and not in the app, so I count it as an environment problem. The Events section at the bottom of `describe` is the first place to look, because it names the exact reason.
