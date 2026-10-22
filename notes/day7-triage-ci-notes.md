@@ -75,6 +75,7 @@ The Udemy lecture "Execute test script in Chrome headless mode" would not open f
 - I added `DriverFactory` to my UI project. It starts Chrome with `--headless=new` and a window size of 1920x1080 when I run Maven with `-Dheadless=true`. Without the option it starts a normal window like before. `FirstTest` and `LoginTest` use it.
 - `mvn test -Dheadless=true` in `day6/toolshop-ui-tests`: 3 tests, 0 failures, `BUILD SUCCESS`.
 - I set the window size because a headless window is small by default, and an element can be hidden in a small window.
+- Later the same day the same command failed 4 times out of 5. Each time one test stopped for 3 to 4 minutes on `driver.get(...)` with a `TimeoutException`, in the visible Chrome as well as in headless mode. At the same time `curl` loaded the same page in under 1 second. So the code was not the problem, and headless was not the problem: Chrome did not finish loading the page, which I count as an environment issue on my network. I did not change any code for it. I tried `PageLoadStrategy.EAGER` once, it did not fix it for sure (one run passed, the next one failed), so I took it out again.
 
 ## The Jenkinsfile
 `Jenkinsfile` is in the root of the repo. I did not run Jenkins (the task says I do not need to), so I checked the commands one by one on my computer instead:
@@ -84,7 +85,7 @@ The Udemy lecture "Execute test script in Chrome headless mode" would not open f
 | Checkout | `checkout scm` | Jenkins does this itself. I could not run it. |
 | Build | `mvn -f .../pom.xml compile` for the API and UI projects | Both compile without error. |
 | API Tests | `mvn -f day5/toolshop-api-tests/pom.xml test` | 8 tests green. |
-| UI Tests (headless) | `mvn -f day6/toolshop-ui-tests/pom.xml test -Dheadless=true` | 3 tests green. |
+| UI Tests (headless) | `mvn -f day6/toolshop-ui-tests/pom.xml test -Dheadless=true` | 3 tests green on the first run. Later runs hung on page loads (see Headless Chrome). |
 
 `post { always { junit '**/target/surefire-reports/*.xml' } }` publishes the results of both projects. I used `sh` because a normal Jenkins agent is Linux. On my Windows computer it would need `bat`.
 
