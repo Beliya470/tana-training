@@ -10,8 +10,8 @@ public class DriverFactory {
         ChromeOptions options = new ChromeOptions();
 
         if (Boolean.getBoolean("headless")) {
-            options.addArguments("--headless=new");
-            options.addArguments("--window-size=1920,1080"); // a headless window is small by default, some elements would be hidden
+            options.addArguments("--headless");
+            options.addArguments("--window-size=1920,1080"); // not in the lecture: my own addition so the headless page has a normal desktop size
         }
 
         return new ChromeDriver(options);
